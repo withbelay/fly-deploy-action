@@ -1,0 +1,78 @@
+name: Fly Deploy
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: The name of the app on fly (api, mktproxy, investor-web etc)
+        required: true
+        type: string
+      deploy_args:
+        description: 'This is a hack to send docker build args into the fly deploy. I know. Yuck.'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      OP_SERVICE_ACCOUNT_TOKEN:
+        description: 'The token for the service account that has access to the vault'
+        required: true
+      FLY_API_TOKEN:
+        description: 'The fly auth token'
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy to Fly
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set Deploy Env
+        run: |
+          if [[ $GITHUB_REF_NAME == 'main' ]]; then
+            echo "DEPLOY_ENV=live" >> "$GITHUB_ENV"
+          elif [[ $GITHUB_REF_NAME == 'sandbox' ]]; then
+            echo "DEPLOY_ENV=sandbox" >> "$GITHUB_ENV"
+          elif [[ $GITHUB_REF_NAME == 'staging' ]]; then
+            echo "DEPLOY_ENV=staging" >> "$GITHUB_ENV"
+          else
+            echo "Invalid branch used"
+            exit 1
+          fi
+
+      - name: Set Full Fly App Name
+        run: echo "FLY_APP=belay-$DEPLOY_ENV-${{inputs.app}}" >> "$GITHUB_ENV"
+
+      - name: Set Vault
+        run: echo "OP_VAULT=devops-$DEPLOY_ENV-${{inputs.app}}" >> "$GITHUB_ENV"
+
+      - name: Load Secrets
+        id: op_secrets
+        uses: withbelay/op-fly-secrets-sync-docker-action@v2.0.1
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+        with:
+          vault: ${{ env.OP_VAULT }}
+
+
+      - name: Fly Secrets Sync
+        uses: superfly/flyctl-actions@1.4
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        with:
+          args: "secrets set ${{steps.op_secrets.outputs.fly_secrets}} --app $FLY_APP"
+
+      - name: Fly Deploy
+        uses: superfly/flyctl-actions@1.4
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        with:
+          args: "deploy --force-machines --verbose ${{inputs.deploy_args}} --app $FLY_APP"
+
+      - name: Notify Slack
+        uses: craftech-io/slack-action@v1
+        if: always()
+        with:
+          slack_webhook_url: ${{ secrets.SLACK_DEVELOPMENT_WEBHOOK_URL }}
