@@ -1,0 +1,41 @@
+name: Fly Deploy
+description: Composite action that loads secrets from 1Password, syncs them to a fly app, and deploys that fly app
+inputs:
+  env:
+    description: 'staging, sandbox, or live'
+    required: true
+  app:
+    description: 'which app are we deploying? investor-web, api, mktproxy, alpaca-proxy'
+    required: true
+  deploy_args:
+    description: '--build-arg RELEASE_NAME=${{ env.RELEASE_NAME }}'
+    required: true
+    default: ''
+
+runs:
+  - name: Checkout
+    uses: actions/checkout@v3
+  - name: Set Vault
+    run: echo "OP_VAULT=devops-${{inputs.env}}-${{inputs.app}}" >> "$GITHUB_ENV"
+
+  - name: Load Secrets
+    id: op_secrets
+    uses: withbelay/op-fly-secrets-sync-docker-action@v2.0.1
+    with:
+      vault: ${{ env.OP_VAULT }}
+
+  - name: Fly Secrets Sync
+    uses: superfly/flyctl-actions@1.4
+    with:
+      args: "secrets set ${{steps.op_secrets.outputs.fly_secrets}} --app ${{ inputs.app }}"
+
+  - name: Fly Deploy
+    uses: superfly/flyctl-actions@1.4
+    with:
+      args: "deploy --force-machines --verbose ${{inputs.deploy_args}} --app ${{ inputs.app }}"
+
+  - name: Notify Slack
+    uses: craftech-io/slack-action@v1
+    if: always()
+    with:
+      slack_webhook_url: ${{ secrets.SLACK_DEVELOPMENT_WEBHOOK_URL }}
