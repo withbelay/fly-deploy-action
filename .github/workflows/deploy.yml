@@ -14,6 +14,9 @@ on:
       FLY_API_TOKEN:
         description: 'The fly auth token'
         required: true
+      SLACK_DEVELOPMENT_WEBHOOK_URL:
+        description: 'The slack webhook url for the development channel'
+        required: true
 
 jobs:
   deploy:
