@@ -46,12 +46,6 @@ jobs:
       - name: Set Vault
         run: echo "OP_VAULT=devops-$DEPLOY_ENV-${{inputs.app}}" >> "$GITHUB_ENV"
 
-      - name: Set Build Arg
-        # This is a hack - BelayApi needs to pass a build arg to the docker build.
-        # They're ignored if not used, and it would be a pain to figure out how to
-        # derive the input value on that side, so I'm going to just leave this hack.
-        run: echo "RELEASE_NAME=belay_$DEPLOY_ENV" >> "$GITHUB_ENV"
-
       - name: Load Secrets
         id: op_secrets
         uses: withbelay/op-fly-secrets-sync-docker-action@v2.0.1
@@ -73,7 +67,7 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         with:
-          args: "deploy --force-machines --verbose --build-arg RELEASE_NAME=$RELEASE_NAME --app $FLY_APP"
+          args: "deploy --force-machines --verbose --build-arg DEPLOY_ENV=$DEPLOY_ENV --app $FLY_APP"
 
       - name: Notify Slack
         uses: craftech-io/slack-action@v1
