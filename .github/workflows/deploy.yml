@@ -60,7 +60,7 @@ jobs:
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         with:
-          args: "secrets set ${{steps.op_secrets.outputs.fly_secrets}} --app $FLY_APP"
+          args: "secrets set ${{steps.op_secrets.outputs.fly_secrets}} --stage --app $FLY_APP"
 
       - name: Fly Deploy
         uses: superfly/flyctl-actions@1.4
