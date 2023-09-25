@@ -30,21 +30,21 @@ jobs:
       - name: Set Deploy Env
         run: |
           if [[ $GITHUB_REF_NAME == 'main' ]]; then
-            echo "DEPLOY_ENV=live" >> "$GITHUB_ENV"
+            printf "DEPLOY_ENV=live" >> "$GITHUB_ENV"
           elif [[ $GITHUB_REF_NAME == 'sandbox' ]]; then
-            echo "DEPLOY_ENV=sandbox" >> "$GITHUB_ENV"
+            printf "DEPLOY_ENV=sandbox" >> "$GITHUB_ENV"
           elif [[ $GITHUB_REF_NAME == 'staging' ]]; then
-            echo "DEPLOY_ENV=staging" >> "$GITHUB_ENV"
+            printf "DEPLOY_ENV=staging" >> "$GITHUB_ENV"
           else
-            echo "Invalid branch used"
+            printf "Invalid branch used"
             exit 1
           fi
 
       - name: Set Full Fly App Name
-        run: echo "FLY_APP=belay-$DEPLOY_ENV-${{inputs.app}}" >> "$GITHUB_ENV"
+        run: printf "FLY_APP=belay-$DEPLOY_ENV-${{inputs.app}}" >> "$GITHUB_ENV"
 
       - name: Set Vault
-        run: echo "OP_VAULT=devops-$DEPLOY_ENV-${{inputs.app}}" >> "$GITHUB_ENV"
+        run: printf "OP_VAULT=devops-$DEPLOY_ENV-${{inputs.app}}" >> "$GITHUB_ENV"
 
       - name: Load Secrets
         id: op_secrets
