@@ -17,6 +17,9 @@ on:
       SLACK_DEVELOPMENT_WEBHOOK_URL:
         description: 'The slack webhook url for the development channel'
         required: true
+      SENTRY_AUTH_TOKEN:
+        description: 'The sentry auth token'
+        required: true
 
 jobs:
   deploy:
@@ -54,7 +57,6 @@ jobs:
         with:
           vault: ${{ env.OP_VAULT }}
 
-
       - name: Fly Secrets Sync
         uses: superfly/flyctl-actions@1.4
         env:
@@ -74,3 +76,13 @@ jobs:
         if: always()
         with:
           slack_webhook_url: ${{ secrets.SLACK_DEVELOPMENT_WEBHOOK_URL }}
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: "withbelay"
+          SENTRY_PROJECT: ${{inputs.app}}
+          # SENTRY_URL: https://sentry.io/
+        with:
+          environment: ${{ env.DEPLOY_ENV }}
