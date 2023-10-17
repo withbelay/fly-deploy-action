@@ -51,7 +51,7 @@ jobs:
 
       - name: Load Secrets
         id: op_secrets
-        uses: withbelay/op-fly-secrets-sync-docker-action@v2.0.2
+        uses: withbelay/op-fly-secrets-sync-docker-action@v2.0.7
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
         with:
