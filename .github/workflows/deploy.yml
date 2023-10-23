@@ -49,20 +49,15 @@ jobs:
       - name: Set Vault
         run: echo "OP_VAULT=devops-$DEPLOY_ENV-${{inputs.app}}" >> "$GITHUB_ENV"
 
-      - name: Load Secrets
+      - name: Sync 1P Secrets To Fly
         id: op_secrets
-        uses: withbelay/op-fly-secrets-sync-docker-action@v2.0.7
+        uses: withbelay/op-fly-secrets-sync-docker-action@v3.0.0
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-        with:
-          vault: ${{ env.OP_VAULT }}
-
-      - name: Fly Secrets Sync
-        uses: superfly/flyctl-actions@1.4
-        env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         with:
-          args: "secrets set ${{steps.op_secrets.outputs.fly_secrets}} --stage --app $FLY_APP"
+          vault: ${{ env.OP_VAULT }}
+          fly_app: ${{ env.FLY_APP }}
 
       - name: Fly Deploy
         uses: superfly/flyctl-actions@1.4
